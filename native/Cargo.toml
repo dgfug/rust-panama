@@ -1,0 +1,10 @@
+[package]
+name = "example"
+version = "0.1.0"
+edition = "2018"
+
+[build-dependencies]
+cbindgen = "0.20.0"
+
+[lib]
+crate_type = ["cdylib"]
