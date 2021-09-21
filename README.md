@@ -1,6 +1,6 @@
 # rust-panama
 
-A template project for setting up Java 18's **Panama** (w/ jextract) and **Rust.**
+A template project for setting up both Rust and the Java 18 Panama Foreign Linker API *(via jextract).*
 
 ### How to Setup
 
