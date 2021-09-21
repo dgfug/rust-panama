@@ -32,6 +32,7 @@ val outputClass: String by project
 val cargoProfile: String by project
 
 tasks {
+    // jextract configuration
     jextract {
         dependsOn(":native:cbindgen")
         header("$projectDir/native/target/$libraryHeader") {
@@ -42,6 +43,7 @@ tasks {
         }
     }
 
+    // For 'run'
     withType<JavaExec> {
         jvmArgs = listOf(
             "--add-modules", "jdk.incubator.foreign",
@@ -51,6 +53,8 @@ tasks {
     }
 }
 
+// Sets runtime flags to allow Foreign Linker.
+// Also specifies the library path for this application.
 application {
     val mainClass: String by project
     this.mainClass.set(mainClass)
@@ -61,6 +65,7 @@ application {
     )
 }
 
+// Adds the library file to the zip file.
 distributions {
     main {
         contents {
