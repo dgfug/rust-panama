@@ -8,69 +8,56 @@ plugins {
 group = "org.example"
 version = "1.0.0"
 
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Put your dependencies here.
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(18))
     }
 }
 
-val crate = "example"
-val headerPath = "org.example"
-val libName = "$crate.dll"
+val libraryName: String by project
+val libraryFile: String by project
+val libraryHeader: String by project
 
-val nativePath = "native"
-val libPath = "$nativePath/target/release/$libName"
+val outputPackage: String by project
+val outputClass: String by project
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-
-}
+val cargoProfile: String by project
 
 tasks {
-    task<Exec>("runCbindgen") {
-        workingDir = File(nativePath)
-        commandLine("cbindgen", "--config", "cbindgen.toml", "--crate", crate, "--output", "lib.h")
-    }
-
-    task<Exec>("buildRustLibDebug") {
-        workingDir = File(nativePath)
-        commandLine("cargo", "build")
-    }
-
-    task<Exec>("buildRustLib") {
-        workingDir = File(nativePath)
-        commandLine("cargo", "build", "--release")
-        outputs.file(libPath)
-    }
-
+    // jextract configuration
     jextract {
-        dependsOn("runCbindgen")
-        header("$projectDir/$nativePath/lib.h") {
-            libraries.set(listOf("example"))
-            targetPackage.set(headerPath)
-            className.set("Example")
+        dependsOn(":native:cbindgen")
+        header("$projectDir/native/target/$libraryHeader") {
+            libraries.set(listOf(libraryName))
+            targetPackage.set(outputPackage)
+            className.set(outputClass)
             sourceMode.set(false)
         }
     }
 
+    // For 'run'
     withType<JavaExec> {
         jvmArgs = listOf(
             "--add-modules", "jdk.incubator.foreign",
             "--enable-native-access=ALL-UNNAMED",
-            "-Djava.library.path=./$nativePath/target/debug"
+            "-Djava.library.path=./native/target/$cargoProfile"
         )
-    }
-
-    withType<JavaCompile> {
-        dependsOn("buildRustLibDebug")
     }
 }
 
+// Sets runtime flags to allow Foreign Linker.
+// Also specifies the library path for this application.
 application {
-    mainClass.set("org.example.Main")
+    val mainClass: String by project
+    this.mainClass.set(mainClass)
     applicationDefaultJvmArgs = listOf(
         "--add-modules", "jdk.incubator.foreign",
         "--enable-native-access=ALL-UNNAMED",
@@ -78,10 +65,11 @@ application {
     )
 }
 
+// Adds the library file to the zip file.
 distributions {
     main {
         contents {
-            from(tasks["buildRustLib"]) {
+            from(tasks.getByPath(":native:build")) {
                 into("lib")
             }
         }
